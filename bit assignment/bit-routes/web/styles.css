@@ -1,0 +1,320 @@
+* {
+  box-sizing: border-box;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+}
+
+body {
+  margin: 0;
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+.wrap {
+  max-width: 980px;
+  margin: 24px auto;
+  padding: 0 16px;
+}
+
+.controls {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.controls label {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  background: #1e293b;
+  padding: 6px 8px;
+  border-radius: 8px;
+}
+
+.controls button {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.controls button:hover {
+  filter: brightness(1.1);
+}
+
+.controls button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-accent {
+  background: #8b5cf6 !important;
+}
+
+.stage {
+  position: relative;
+  display: inline-block;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+#map {
+  position: absolute;
+  left: 0;
+  top: 0;
+  image-rendering: pixelated;
+  z-index: 1;
+}
+
+#overlay {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.stats {
+  background: #111827;
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 12px;
+}
+
+.stage.relief #map {
+  filter: contrast(1.05) saturate(1.05);
+}
+
+.stage.relief #overlay polyline {
+  stroke-width: 3.5;
+}
+
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  z-index: 3;
+  background: rgba(2, 6, 23, 0.55);
+  backdrop-filter: blur(1px);
+  color: #e5e7eb;
+  font-weight: 600;
+}
+
+.loading-overlay.show {
+  display: flex;
+}
+
+.stage.loading {
+  pointer-events: none;
+}
+
+.spinner {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 3px solid #cbd5e1;
+  border-top-color: transparent;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-text {
+  letter-spacing: .2px;
+}
+
+.path-weights {
+  margin-top: -8px;
+  margin-bottom: 20px;
+}
+
+/* 3D Modal */
+.threed {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.threed.hidden {
+  display: none;
+}
+
+.threed-inner {
+  background: #1e293b;
+  border-radius: 12px;
+  width: 90vw;
+  max-width: 1200px;
+  height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.threed-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #0f172a;
+  border-bottom: 1px solid #334155;
+}
+
+.threed-toolbar .grow {
+  flex: 1;
+}
+
+.threed-canvas {
+  flex: 1;
+  position: relative;
+  background: #0b1220;
+}
+
+.threed-canvas canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.controls input[type="number"] {
+  width: 80px;
+  padding: 4px 6px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #e2e8f0;
+  border-radius: 6px;
+}
+
+.explanation {
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: #cbd5e1;
+  margin-bottom: 16px;
+}
+
+.explanation ul {
+  margin: 6px 0 6px 20px;
+  padding: 0;
+}
+
+/* Info bubble styles */
+.info-bubble {
+  position: relative;
+  display: inline-block;
+}
+
+.info-icon {
+  cursor: pointer;
+  font-size: 18px;
+  margin-left: 6px;
+  user-select: none;
+}
+
+.info-content {
+  display: none;
+  position: absolute;
+  top: 28px;
+  left: -120px;
+  width: 260px;
+  background: #1e293b;
+  color: #e2e8f0;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  font-weight: 400;
+}
+
+.info-content ul {
+  margin: 4px 0 4px 20px;
+  padding: 0;
+}
+
+.info-bubble:hover .info-content,
+.info-icon:focus + .info-content {
+  display: block;
+}
+
+.controls select {
+  padding: 4px 6px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #e2e8f0;
+  border-radius: 6px;
+  min-width: 180px;
+}
+
+.controls label[title] {
+  cursor: help;
+}
+
+/* Keep Route + Vehicle on one line */
+.preset-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: nowrap;
+  align-items: center;
+}
+
+/* Make the boat checkbox look like a normal button */
+.controls .btn-like {
+  background: #1e293b;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  line-height: 1;
+  height: 40px;
+}
+
+.controls .btn-like:hover {
+  filter: brightness(1.1);
+}
+
+.controls .btn-like:has(input[disabled]) {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Tidy the checkbox inside the button-like label */
+.controls .btn-like input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #334155;
+  margin: 0;
+}
+
+/* Stage wrapper and header */
+.stage-wrapper {
+  display: inline-block;
+  width: fit-content;
+}
+
+.stage-header {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}

@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bit Routes - Multi-Waypoint</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+    </script>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>
+        Bit Routes <span style="font-size: 0.6em; color: #94a3b8;">Multi-Waypoint</span>
+        <div class="info-bubble" style="display: inline-block; margin-left: 8px;">
+          <span class="info-icon" tabindex="0" title="Click for instructions">ℹ</span>
+          <div class="info-content" style="left: -200px; width: 320px;">
+            <strong>How to use:</strong>
+            <ul>
+              <li><strong>Left-click</strong> on the map to add waypoints in sequence</li>
+              <li><strong>Right-click</strong> to remove the last waypoint</li>
+              <li>The route will automatically update as you add waypoints</li>
+            </ul>
+          </div>
+        </div>
+      </h1>
+
+      <!-- Row 1: generation + global controls -->
+      <div class="controls">
+        <label>Seed <input id="seed" type="number" placeholder="random" /></label>
+        <label>Size <input id="size" type="number" value="512" min="64" max="1024" /></label>
+        <label>
+          Method
+          <select id="noise-method">
+            <option value="auto" selected>Auto</option>
+            <option value="fast">Fast (FastNoiseLite)</option>
+            <option value="opensimplex">OpenSimplex</option>
+          </select>
+        </label>
+        <div class="info-bubble">
+          <span class="info-icon" tabindex="0" title="Click for method details">ℹ</span>
+          <div class="info-content" style="width: 320px; left: -280px;">
+            <strong>Noise Generation Methods</strong>
+            <ul style="font-size: 0.85rem; line-height: 1.4; margin-top: 8px;">
+              <li><b>Auto</b> – Uses the fastest available method</li>
+              <li><b>Fast</b> – FastNoiseLite (3-5x faster, requires pyfastnoiselite)</li>
+              <li><b>OpenSimplex</b> – Original method (slower but always available)</li>
+            </ul>
+          </div>
+        </div>
+        <button id="btn-generate">Generate</button>
+      </div>
+
+      <!-- Row 2: path cost inputs + presets -->
+      <div class="controls path-weights">
+        <label>
+          Land
+          <input id="w-land" type="number" min="0" max="10" value="1" step="1" />
+        </label>
+        <label>
+          Mountain
+          <input id="w-mountain" type="number" min="0" max="10" value="3" step="1" />
+        </label>
+        <label>
+          Snow
+          <input id="w-snow" type="number" min="0" max="10" value="4" step="1" />
+        </label>
+        <!-- Info bubble -->
+        <div class="info-bubble">
+          <span class="info-icon" tabindex="0" title="Click for details">ℹ</span>
+          <div class="info-content">
+            <strong>Path Cost Parameters</strong>
+            <p>These numbers (0–10) tweak how the pathfinder evaluates terrain cost:</p>
+            <ul>
+              <li><b>Land</b> – Normal terrain; low cost, easiest path.</li>
+              <li><b>Mountain</b> – Rockier terrain; medium cost.</li>
+              <li><b>Snow</b> – High peaks; high cost, avoided if possible.</li>
+            </ul>
+            <p>Higher values make the algorithm prefer alternative, cheaper routes.</p>
+          </div>
+        </div>
+        <button id="btn-clear">Clear All</button>
+
+        <div class="preset-row">
+          <label>
+            Route
+            <select id="route-preset">
+              <option value="custom" selected>Custom</option>
+              <option value="scenic-mountains">Mountain route</option>
+              <option value="mountain-snow-adventure">Snow adventure</option>
+              <option value="no-mountains">No mountains</option>
+            </select>
+          </label>
+          <label>
+            Vehicle
+            <select id="vehicle-preset">
+              <option value="custom" selected>Custom</option>
+              <option value="hiker">Hiker</option>
+              <option value="mtb">Mountain bike</option>
+              <option value="4x4">4×4</option>
+              <option value="road-car">Road car</option>
+              <option value="snowmobile">Snowmobile</option>
+            </select>
+          </label>
+        </div>
+
+        <label class="btn-like" title="Allows travel through water tiles.">
+          <input id="allow-water" type="checkbox" />
+          Has a boat
+        </label>
+      </div>
+      <pre id="stats" class="stats"></pre>
+
+      <div class="stage-wrapper">
+        <div class="controls stage-header">
+          <button id="btn-heightmap"  aria-pressed="false" title="Toggle shaded heightmap">Heightmap</button>
+          <button id="btn-3d" title="Open 3D surface">3D</button>
+        </div>
+
+        <div id="stage" class="stage">
+          <img id="map" alt="map" />
+          <svg id="overlay"></svg>
+          <div id="loading" class="loading-overlay" aria-live="polite" aria-busy="false">
+            <div class="spinner" aria-hidden="true"></div>
+            <div class="loading-text">Generating map…</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="threed-modal" class="threed hidden" aria-hidden="true">
+        <div class="threed-inner">
+          <div class="threed-toolbar">
+            <strong>3D Surface</strong>
+            <div class="grow"></div>
+            <label>Exaggeration <input id="threed-exag" type="range" min="5" max="120" value="80" /></label>
+            <button id="threed-close">Close</button>
+          </div>
+          <div id="threed-canvas" class="threed-canvas" role="img" aria-label="3D terrain"></div>
+        </div>
+      </div>
+
+
+      <!-- Algorithm selector at the bottom -->
+      <div class="controls algorithm-selector">
+        <label style="margin-right: 8px;">
+          Routing Algorithm
+          <select id="algorithm-select">
+            <option value="astar" selected>A* (Optimal + Fast)</option>
+            <option value="dijkstra">Dijkstra (Optimal)</option>
+            <option value="greedy">Greedy Best-First (Fast)</option>
+            <option value="bfs">Breadth-First Search (Shortest Steps)</option>
+            <option value="bidirectional">Bidirectional A* (Very Fast)</option>
+          </select>
+        </label>
+        <div class="info-bubble info-bubble--right">
+          <span class="info-icon" tabindex="0" title="Click for algorithm details">ℹ</span>
+          <div class="info-content" style="width: 420px; left: -350px;">
+            <strong>Routing Algorithms</strong>
+            <ul style="font-size: 0.85rem; line-height: 1.4; margin-top: 8px;">
+              <li><b>A*</b> – Best overall: finds optimal path efficiently using heuristics</li>
+              <li><b>Dijkstra</b> – Guaranteed optimal but explores more uniformly (slower)</li>
+              <li><b>Greedy Best-First</b> – Fast but not optimal; rushes toward goal</li>
+              <li><b>BFS</b> – Finds path with fewest steps (ignores terrain costs)</li>
+              <li><b>Bidirectional A*</b> – Searches from both ends simultaneously (fastest for long paths)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Load module first, then main.js -->
+    <script type="module">
+      // Inline import to verify it loads
+      import('/static/three-view.module.js')
+        .then(() => console.log('✓ three-view.module.js loaded successfully'))
+        .catch(err => console.error('✗ Failed to load three-view.module.js:', err));
+    </script>
+    <script type="module" src="/static/three-view.module.js"></script>
+    <script src="/static/main.js"></script>
+  </body>
+</html>
